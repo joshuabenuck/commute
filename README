@@ -1,3 +1,8 @@
+Experiments w/ collecting data during commute and analyzing it to discover patterns.
+
+All code / data is released under an MIT license unless otherwise noted.
+All ArduCopter / ArduPilot code comes from diydrones.com.
+
 RC2/: Contains Arducopter RC2 which is the current codebase running on the Arduino.
 logs/: Contains logs take from the arducopter.
 logs/flight-log.txt: Datalog dump from arducopter. Contains data from actual flights.
