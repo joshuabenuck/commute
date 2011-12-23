@@ -1,0 +1,6 @@
+RC2/: Contains Arducopter RC2 which is the current codebase running on the Arduino.
+logs/: Contains logs take from the arducopter.
+logs/flight-log.txt: Datalog dump from arducopter. Contains data from actual flights.
+logs/log-gps.txt: GPS telemetry taken during ride home on 12/22/11.
+roadmap.txt: Ideas / next steps / long term vision.
+

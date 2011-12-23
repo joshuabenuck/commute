@@ -1,0 +1,45 @@
+iPhone Next Steps:
+ * Downlaod and compile Geoloqi
+ * Learn how they use the Google Maps APIs
+ * Learn how to read the GPS
+ * Learn how to read the accelerometer and gyro
+ * Learn how to read the camera
+ * See if a single app can stream data and read the gps/gyro/accel/camera at the same time
+
+Adruino Next Steps:
+ * Research datalog clearing bug.
+ * Get WEP-only wifi adapter working.
+ * Start gathering image data on laptop.
+ * Research best supported linux wifi adapter.
+ * Write ball detection code.
+ * Write Haar training program.
+ * Learn how to unit test machine learning algorithms.
+ * See if beagle board upgrade fixes wifi connection.
+
+Long term vision:
+ * Compare driving characteristics.
+ * Look for sleep to commute length correlation.
+ * Look for wa/or school date to commute lenght correlation.
+ * Look for weather to commute length correlation.
+ * Look for sunrise / sunset time to commute length correlation.
+ * Detect lane changes via computer vision.
+ * Collect commute video recordings.
+
+Completed:
+ * Recompiled ArduCopter RC2 and read off old log data.
+ * Wrote python script to pull off log data and clear log chip.
+ * Manual approach appears more reliable w/ minimal extra overhead.
+ * Discovered bug in clearing log data.
+ * Uploaded GPS test sketch.
+ * Verified GPS telemetry works.
+ * Successfully compiled opencv w/ a combination of "port install" and building directly from source.
+ * python -m serial.tools.miniterm /dev/tty.usbserial-A700femn 115200 can be used to talk to the arucopter.
+ * | tee "log-`date`" to save the session.
+ * Cleanup project tote so things are more stationary / compartmentalized.
+
+To Find:
+ * Gel pad for car
+ * Bluetooth dongles
+ * Black project box
+ * Gray WEP wifi adapter
+
