@@ -1,0 +1,12 @@
+Store link:
+https://store.diydrones.com/MediaTek_MT3329_GPS_10Hz_Adapter_Basic_p/mt3329-02.htm
+
+Datasheet link (local copy in dir):
+https://docs.google.com/viewer?a=v&pid=explorer&chrome=true&srcid=0B_dHj7E2weiiNmUzNDA3OTktNTNhNy00Y2Y5LTg0YTQtMzIyNzJhZmFiNjcy&hl=en_US
+
+MTK Commands (local copy in dir):
+https://docs.google.com/Doc?docid=0ASI4WbhJsiyqZDk3MndtYl8yN2R2ajVmOGdy&hl=en
+
+Updating the firmware:
+http://code.google.com/p/ardupilot/wiki/MediaTek
+
