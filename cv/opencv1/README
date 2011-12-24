@@ -1,0 +1,8 @@
+This directory contains some open cv1.x based python scripts.
+
+record.py:
+Written a while back. I think it just records avi files from the first camera.
+
+track.py:
+My initial attempt at getting ball detection to work. I ended up added a bunch of configuration sliders. In the end I learned that I needed to focus on getting a set of pre-recorded images with which to experiment and that I may have been expecting too much from the Hough algorithm.
+
