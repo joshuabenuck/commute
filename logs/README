@@ -1,0 +1,7 @@
+flight-log.txt: Dump of the datalog memory that includes some quad flights.
+log-gps.txt: Capture of telemetry output from drive home on 12/22/11.
+log-there.txt: Trip to edelweiss and out to goldendale.
+log-gma.txt: Capture of GPS telemetry output driving to great-grandma's house.
+log-gma-back.txt: Trip back to my in-laws from great-grandma's.
+parser.py: Beginnings of a log parser.
+
