@@ -106,7 +106,7 @@ def histogram(name, id):
     axes = fig.add_subplot(111)
     
     if len(img.shape) == 2 or img.shape[2:][0] == 1:
-        axes.hist(img.flatten(), 300, color='yellow', edgecolor='none')
+        axes.hist(img.flatten(), 300, color='blue', edgecolor='none')
     else:
         img = cv2.cvtColor(img, cv2.cv.CV_RGB2HSV)
         axes.hist([img[...,0], img[...,1], img[...,2]], 128, color=['red', 'green', 'blue'], edgecolor='none')

@@ -20,13 +20,13 @@
 
         .imagePanel {
             box-ordinal-group: 1;
-            width: 300px;
+            width: 500px;
         }
 
         .controlPanel {
             padding: 3px;
             box-ordinal-group: 2;
-            width: 200px;
+            width: 225;
         }
 
         .execute {
@@ -79,7 +79,7 @@
     images = {1:"LightBall.jpg"};
 
     function imageChooser() {
-        chooser = $("<div/>").addClass("imageChooser").text("Image:");
+        chooser = $("<div/>").addClass("imageChooser").text("Image: ");
         select = $("<select/>");
         $.each(images, function(key, value) {
             select.append($("<option/>").attr("value", value).text(value));
@@ -87,11 +87,15 @@
         return chooser.append(select);
     }
 
+    srcImage = "";
     function execute(row) {
         index = row.attr("index");
         if (index == 1) {
-            addImage(row, "http://localhost:5000/image/LightBall.jpg");
-            addRow(2);
+            addImage(row, "http://localhost:5000/image/" + srcImage);
+            $(".imageChooser > select option:contains('" + images["1"] +"')")
+                .attr("value", srcImage).text(srcImage);
+            images["1"] = srcImage;
+            if ($(".row").size() == 1) addRow(2);
         }
 
         $(".controlPanel > select > option:selected", row).each(function() {
@@ -154,10 +158,17 @@
     }
 
     function addImage(row, imageSrc) {
+        if ($(".imagePanel", row).size() != 0) {
+            console.log("New:      " + imageSrc);
+            $("img", row).attr("src", imageSrc + "?" + new Date().getTime());
+            return false;
+        }
+
       img = $("<img/>")
           .attr("src", imageSrc + "?" + new Date().getTime())
           .addClass("imagePanel");
       row.append(img);
+      return true;
     }
 
     function addRow(rowIndex) {
@@ -187,19 +198,11 @@
             imageSrc = imageSrc + extraParams;
         }
 
-        // Row already exists, just need to update image.
-        row = getRow(parseInt(rowIndex) + 1);
-        if (row.size() != 0) {
-            console.log("New:      " + imageSrc);
-            $("img", row).attr("src", imageSrc + "?" + new Date().getTime());
-            return;
-        }
-
+        currentRow = getRow(rowIndex);
+        if (!addImage(currentRow, imageSrc)) return;
         if(op != "histogram") {
             images[parseInt(rowIndex)] = op + "." + rowIndex + ".jpg"
         }
-        currentRow = getRow(rowIndex);
-        addImage(currentRow, imageSrc);
         $(".remove").remove();
         currentRow.append(removeButton(currentRow));
         row = addRow(parseInt(rowIndex) + 1);
@@ -267,16 +270,27 @@
                 .click(function() {removeRow(row);});
     }
 
-    function addImageChooser(row) {
-        chooser = $("<div/>");
+    function addSourceImageChooser(row) {
+        chooser = $("<div/>").addClass("controlPanel").text("Source Image: ");
+        select = $("<select/>").addClass("srcImageChooser")
+                               .change(function() {
+            srcImage = $(".srcImageChooser > option:selected").text();
+        });
+        srcImages = ["LightBall.jpg", "DarkBall.jpg"];
+        srcImage = srcImages[0];
+        images = {1:srcImage};
+        for (i = 0; i < srcImages.length; i++) {
+        select.append($("<option/>").attr("value", srcImages[i])
+                                    .text(srcImages[i]));
+        }
+        chooser.append(select);
         row.append(chooser);
     }
 
     $(function() {
         row = $("<div/>").addClass("row").attr("index", "1");
         $(".pipeline").append(row);
-        addImageChooser(row);
-        row.append($("<div/>").addClass("controlPanel"));
+        addSourceImageChooser(row);
         //addControlPanel(row);
         addActionButtons(row);
     });
