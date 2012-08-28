@@ -145,6 +145,8 @@
         nextRow = getRow(parseInt(index) + 1);
         nextRow.remove();
         addRow(parseInt(index));
+        //$(".imageChooser > select").last().attr("disabled", false);
+        $(".operationChooser").last().attr("disabled", false);
         if (index == 2) { return; }
 
         // Add remove button to prev row.
@@ -179,6 +181,10 @@
         addControlPanel(row);
         addActionButtons(row);
         $(".pipeline").append(row);
+        //selects = $(".imageChooser > select");
+        //$(selects).not(selects.last()).attr("disabled", true);
+        ops = $(".operationChooser");
+        $(ops).not(ops.last()).attr("disabled", true);
         return row;
     }
 
@@ -228,7 +234,8 @@
     };
 
     function addControlPanel(row) {
-        var select = $("<select/>").change(function () {
+        var select = $("<select/>").addClass("operationChooser")
+            .change(function () {
             op = $("option:selected", this).text();
             showParams(row, op);
         });

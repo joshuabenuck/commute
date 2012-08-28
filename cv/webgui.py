@@ -11,15 +11,21 @@ import imtools
 
 """
 Next steps:
-    - Choose Image
-    - Change previous operation drop downs to read only.
+    - Add paramIndex and radio button support.
+    - Move source images into different directory.
+    - Put output images in directory based on session id.
+    - Choose Image from source images.
+    - Rerun stack when source image is changed.
     - Isolate color component: HSV and RGB.
-    X Make it possible to remove the last result.
-    X Allow a different source for an op.
+    - Merge grayscale with isolate operation?
     - Histogram Equalization.
     - RGB Histogram
     - HSV Histogram
+      * Fix Hue range. Should be 180 and not 300.
     - Blur
+    X Change previous operation drop downs to read only.
+    X Make it possible to remove the last result.
+    X Allow a different source for an op.
     X Denoise
     - Create histogram widget.
       X Show range info
@@ -32,6 +38,7 @@ Next steps:
       X Show b/w thresholded result
       * Show color result
     - Ability to load multiple images.
+      * May need to change drop down label to "source images".
 
 Minor things:
     X Don't create duplicate thresholds
