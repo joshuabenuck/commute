@@ -1,0 +1,264 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+	<title></title>
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .row {
+            display: -webkit-box;
+            display: box;
+            -webkit-box-orient: horizontal;
+            box-orient: horizontal;
+        }
+
+        .imagePanel {
+            box-ordinal-group: 1;
+            width: 500px;
+            border: 1px solid black;
+        }
+
+        .controlPanel {
+            padding: 3px;
+            box-ordinal-group: 2;
+            width: 200px
+            border: 1px solid black;
+        }
+
+        .execute {
+            box-ordinal-group: 3;
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+
+        .pipeline {
+            margin-left: auto;
+            margin-right: auto;
+            width: 700px;
+        }
+
+        .paramPrototypes {
+            display: none;
+        }
+    </style>
+	<script src="js/libs/modernizr-2.5.3.min.js"></script>
+</head>
+<body>
+<header>
+</header>
+<div class="pipeline" role="main">
+    <div class="row" index="1">
+        <img id="firstImage" class="imagePanel" 
+             src="http://localhost:5000/image/LightBall.jpg"/>
+    </div>
+</div>
+<footer>
+</footer>
+<div class="paramPrototypes">
+    <div class="histogramParams">
+        <div><input type="radio" value="blackandwhite"/>Black and White</div>
+        <div><input type="radio" value="hsv"/>HSV</div>
+    </div>
+    <div class="inRangeParams">
+        <div>Lower Bound: <input class="lowerBound" type="text"/></div>
+        <div>Upper Bound: <input class="upperBound" type="text"/></div>
+    </div>
+    <div class="thresholdParams">
+        <div>Lower Bound: <input class="lowerBound" type="text"/></div>
+        <div>Upper Bound: <input class="upperBound" type="text"/></div>
+    </div>
+</div>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="js/libs/jquery-1.7.2.min.js"><\/script>')</script>
+
+<script src="js/script.js"></script>
+<script>
+    baseUrl = "http://localhost:5000"
+    images = {1:"LightBall.jpg"};
+
+    function imageChooser() {
+        select = $("<select/>").addClass("imageChooser");
+        $.each(images, function(key, value) {
+            select.append($("<option/>").attr("value", value).text(value));
+        });
+        return select;
+    }
+
+    function execute(row) {
+        index = row.attr("index");
+        $(".controlPanel > select > option:selected", row).each(function() {
+            op = $(this).text();
+            console.log(op);
+            if (op == "Histogram") {
+                performOperation("histogram", index);
+            }
+            else if (op == "Grayscale") {
+                performOperation("grayscale", index);
+            }
+            else if (op == "Hue") {
+                performOperation("hue", index);
+            }
+            else if (op == "InRange") {
+                extraParams = "/" + $(".lowerBound", row).val() + 
+                              "/" + $(".upperBound", row).val();
+                performOperation("inrange", index, extraParams);
+            }
+            else if (op == "Threshold") {
+                extraParams = "/" + $(".lowerBound", row).val() + 
+                                    "/" + $(".upperBound", row).val() +
+                                    "/binary";
+                performOperation("threshold", index, extraParams);
+            }
+            else if (op == "Invert") {
+                performOperation("invert", index);
+            }
+            else if (op == "Denoise") {
+                performOperation("denoise", index);
+            }
+        });
+
+        // Start a chain to re-evaluate remaining items within pipeline.
+        /*size = $(".row").size();
+        if (index >= size - 1) {
+            execute($(".row[index=" + (parseInt(index) + 1) + "]"));
+        }*/
+    }
+
+    function removeRow(row) {
+        // Remove current row.
+        index = row.attr("index");
+        if (images[index] != undefined) { delete images[index]; }
+        row.remove();
+        if (index == 2) { return; }
+
+        // Add remove button to prev row.
+        previndex = parseInt(index) - 1;
+        prevrow = $(".row[index=" + previndex + "]");
+        prevactions = $(".actions", prevrow);
+        prevactions.append(removeButton(prevrow));
+    }
+
+    function getRow(rowIndex) {
+        return $(".row[index = " + rowIndex + "]");
+    }
+
+    function performOperation(op, rowIndex, extraParams)  {
+        /*imageIndexes = Object.keys(images);
+        imageIndex = 0;
+        for (j =0; j < imageIndexes.length; j++) {
+            if (imageIndexes[j] > rowIndex) break;
+            imageIndex = imageIndexes[j];
+        }
+        i = images[imageIndex];*/
+        i = $(".controlPanel > .paramPanel > .imageChooser > option:selected", getRow(rowIndex)).text();
+        console.log("chosen image: " + i);
+        imageSrc = baseUrl + "/" + op + "/" + i + "/" + rowIndex;
+        console.log(imageSrc);
+        if (extraParams != undefined) {
+            imageSrc = imageSrc + extraParams;
+        }
+
+        // Row already exists, just need to update image.
+        row = getRow(parseInt(rowIndex) + 1);
+        if (row.size() != 0) {
+            console.log("New:      " + imageSrc);
+            $("img", row).attr("src", imageSrc + "?" + new Date().getTime());
+            return;
+        }
+
+        if(op != "histogram") {
+            images[parseInt(rowIndex) + 1] = op + "." + rowIndex + ".jpg"
+        }
+        // If we get here, we need to add a row.
+        row = $("<div/>")
+                 .addClass("row")
+                 .attr("index", parseInt(rowIndex)+1)
+                 .append(
+                         $("<img/>")
+                          .attr("src", imageSrc + "?" + new Date().getTime())
+                          .addClass("imagePanel"));
+        addControlPanel(row);
+        addActionButtons(row);
+        $(".pipeline").append(row);
+    }
+
+    function showParams(row, op) {
+        $(".paramPanel", row).remove();
+        var paramPanel = $("<div/>").addClass("paramPanel");
+        paramPanel.append(imageChooser());
+        paramPanel.append(operations[op]);
+        $(".controlPanel", row).append(paramPanel.clone());
+    }
+
+    var operations =  {
+        "Histogram":$("<div/>")
+            .text("Black and White"),
+        "Grayscale":$("<div/>").text("grayscale"),
+        "Hue":$("<div/>").text("hue"),
+        "InRange":$(".paramPrototypes > .inRangeParams"),
+        "Threshold":$(".paramPrototypes > .thresholdParams"),
+        "Invert":$("<div/>"),
+        "Denoise":$("<div/>")
+    };
+
+    function addControlPanel(row) {
+        var select = $("<select/>").change(function () {
+            op = $("option:selected", this).text();
+            showParams(row, op);
+        });
+        var ops = Object.keys(operations);
+        for(var i = 0; i < ops.length; i++) {
+            op = ops[i];
+            select.append(
+                    $("<option/>").attr("value", op)
+                                  .append(op));
+        }
+        row.append($("<div/>")
+                          .addClass("controlPanel")
+                          .append("Operation: ")
+                          .append(select));
+        showParams(row, ops[0]);
+    }
+
+    function addActionButtons(row) {
+        index = parseInt(row.attr("index"));
+
+        // Remove X button from previous row.
+        previndex = parseInt(row.attr("index")) - 1;
+        $(".row[index=" + previndex + "] > .actions > .remove").remove();
+
+        // Add remove button to current row.
+        actions = $("<div/>").addClass("actions");
+        actions.append(
+            $("<input/>")
+                .attr("type", "button")
+                .addClass("execute")
+                .attr("value", ">>")
+                .click(function() {execute(row);}));
+        if (index != 1) { actions.append(removeButton(row)); }
+        row.append(actions);
+    }
+
+    function removeButton(row) {
+        return $("<input/>").attr("type", "button")
+                .attr("value", "X").addClass("remove")
+                .click(function() {removeRow(row);});
+    }
+
+    $(function() {
+        row = $(".row").eq(0)
+        addControlPanel(row);
+        addActionButtons(row);
+    });
+</script>
+<script>
+
+</script>
+</body>
+</html>
