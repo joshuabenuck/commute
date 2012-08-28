@@ -15,19 +15,18 @@
             display: box;
             -webkit-box-orient: horizontal;
             box-orient: horizontal;
+            border-top: 1px solid black;
         }
 
         .imagePanel {
             box-ordinal-group: 1;
-            width: 500px;
-            border: 1px solid black;
+            width: 300px;
         }
 
         .controlPanel {
             padding: 3px;
             box-ordinal-group: 2;
-            width: 200px
-            border: 1px solid black;
+            width: 200px;
         }
 
         .execute {
@@ -37,13 +36,14 @@
         }
 
         .pipeline {
-            margin-left: auto;
-            margin-right: auto;
-            width: 700px;
         }
 
         .paramPrototypes {
             display: none;
+        }
+
+        .remove {
+            vertical-align: top;
         }
     </style>
 	<script src="js/libs/modernizr-2.5.3.min.js"></script>
@@ -52,10 +52,6 @@
 <header>
 </header>
 <div class="pipeline" role="main">
-    <div class="row" index="1">
-        <img id="firstImage" class="imagePanel" 
-             src="http://localhost:5000/image/LightBall.jpg"/>
-    </div>
 </div>
 <footer>
 </footer>
@@ -83,15 +79,21 @@
     images = {1:"LightBall.jpg"};
 
     function imageChooser() {
-        select = $("<select/>").addClass("imageChooser");
+        chooser = $("<div/>").addClass("imageChooser").text("Image:");
+        select = $("<select/>");
         $.each(images, function(key, value) {
             select.append($("<option/>").attr("value", value).text(value));
         });
-        return select;
+        return chooser.append(select);
     }
 
     function execute(row) {
         index = row.attr("index");
+        if (index == 1) {
+            addImage(row, "http://localhost:5000/image/LightBall.jpg");
+            addRow(2);
+        }
+
         $(".controlPanel > select > option:selected", row).each(function() {
             op = $(this).text();
             console.log(op);
@@ -135,17 +137,38 @@
         index = row.attr("index");
         if (images[index] != undefined) { delete images[index]; }
         row.remove();
+
+        nextRow = getRow(parseInt(index) + 1);
+        nextRow.remove();
+        addRow(parseInt(index));
         if (index == 2) { return; }
 
         // Add remove button to prev row.
         previndex = parseInt(index) - 1;
         prevrow = $(".row[index=" + previndex + "]");
-        prevactions = $(".actions", prevrow);
-        prevactions.append(removeButton(prevrow));
+        prevrow.append(removeButton(prevrow));
     }
 
     function getRow(rowIndex) {
         return $(".row[index = " + rowIndex + "]");
+    }
+
+    function addImage(row, imageSrc) {
+      img = $("<img/>")
+          .attr("src", imageSrc + "?" + new Date().getTime())
+          .addClass("imagePanel");
+      row.append(img);
+    }
+
+    function addRow(rowIndex) {
+        // If we get here, we need to add a row.
+        row = $("<div/>")
+                 .addClass("row")
+                 .attr("index", parseInt(rowIndex));
+        addControlPanel(row);
+        addActionButtons(row);
+        $(".pipeline").append(row);
+        return row;
     }
 
     function performOperation(op, rowIndex, extraParams)  {
@@ -156,7 +179,7 @@
             imageIndex = imageIndexes[j];
         }
         i = images[imageIndex];*/
-        i = $(".controlPanel > .paramPanel > .imageChooser > option:selected", getRow(rowIndex)).text();
+        i = $(".controlPanel > .paramPanel > .imageChooser > select > option:selected", getRow(rowIndex)).text();
         console.log("chosen image: " + i);
         imageSrc = baseUrl + "/" + op + "/" + i + "/" + rowIndex;
         console.log(imageSrc);
@@ -173,19 +196,13 @@
         }
 
         if(op != "histogram") {
-            images[parseInt(rowIndex) + 1] = op + "." + rowIndex + ".jpg"
+            images[parseInt(rowIndex)] = op + "." + rowIndex + ".jpg"
         }
-        // If we get here, we need to add a row.
-        row = $("<div/>")
-                 .addClass("row")
-                 .attr("index", parseInt(rowIndex)+1)
-                 .append(
-                         $("<img/>")
-                          .attr("src", imageSrc + "?" + new Date().getTime())
-                          .addClass("imagePanel"));
-        addControlPanel(row);
-        addActionButtons(row);
-        $(".pipeline").append(row);
+        currentRow = getRow(rowIndex);
+        addImage(currentRow, imageSrc);
+        $(".remove").remove();
+        currentRow.append(removeButton(currentRow));
+        row = addRow(parseInt(rowIndex) + 1);
     }
 
     function showParams(row, op) {
@@ -241,7 +258,6 @@
                 .addClass("execute")
                 .attr("value", ">>")
                 .click(function() {execute(row);}));
-        if (index != 1) { actions.append(removeButton(row)); }
         row.append(actions);
     }
 
@@ -251,9 +267,17 @@
                 .click(function() {removeRow(row);});
     }
 
+    function addImageChooser(row) {
+        chooser = $("<div/>");
+        row.append(chooser);
+    }
+
     $(function() {
-        row = $(".row").eq(0)
-        addControlPanel(row);
+        row = $("<div/>").addClass("row").attr("index", "1");
+        $(".pipeline").append(row);
+        addImageChooser(row);
+        row.append($("<div/>").addClass("controlPanel"));
+        //addControlPanel(row);
         addActionButtons(row);
     });
 </script>
