@@ -5,9 +5,11 @@ from pylab import setp
 from matplotlib import pyplot
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from flask import Flask, url_for, send_file, jsonify
+from flask import Flask, url_for, send_file, jsonify, request, make_response
 from PIL import Image
 import imtools
+import traceback
+import ast
 
 """
 Next steps:
@@ -72,6 +74,61 @@ def html(body):
 app = Flask(__name__)
 app.debug = True
 
+def any_response(data):
+    response = make_response(data)
+    origin = request.headers.get('Origin', '')
+    response.headers['Access-Control-Allow-Origin'] = origin
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
+
+@app.route("/run")
+def run():
+    script = request.args["script"]
+    with open("script.py", "w") as f:
+        f.write(script)
+    scope = {
+        "numpy":numpy,
+        "Image":Image,
+        "cv2":cv2,
+        "hue":hue,
+        "inrange":inrange,
+        "histogram":histogram,
+        "invert":invert
+    }
+    imageVars = []
+    imagesList = []
+    arrayType = type(numpy.array(1))
+    imageType = type(Image.open("LightBall.jpg"))
+    def saveImage(img, filename):
+        print "Saving:", filename
+        img.save(filename)
+        imagesList.append(filename)
+    try:
+        module = ast.parse(script)
+        for stmt in module.body:
+            if type(stmt) == ast.Assign:
+                name = stmt.targets[0].id
+                if name in imageVars: imageVars.remove(name)
+                imageVars.append(name)
+        exec script in scope
+        for name in imageVars:
+            contents = scope[name]
+            print name, type(contents)
+            filename = "run." + name + ".jpg"
+            if isinstance(contents, numpy.ndarray):
+                saveImage(Image.fromarray(contents), filename)
+                continue
+            if hasattr(contents, "thumbnail"):
+                saveImage(contents, filename)
+                continue
+    except Exception, e:
+        return make_response((traceback.format_exc(e), 500, None))
+    return jsonify({"images":imagesList})
+
+@app.route("/get-script")
+def getScript():
+    return send_file("script.py")
+
 @app.route("/")
 def welcome():
     return "Hi!"
@@ -88,27 +145,16 @@ def grayscale(name, id):
     Image.open(name).convert('L').save(grayscaleName)
     return image(grayscaleName)
 
-@app.route("/hue/<name>/<id>")
-def hue(name, id):
-    hueName  = "hue." + id + ".jpg"
-    img = numpy.array(Image.open(name))
+def hue(img):
     img = cv2.cvtColor(img, cv2.cv.CV_RGB2HSV)
-    Image.fromarray(img[...,0]).save(hueName)
-    return image(hueName)
+    return img[...,0]
 
-@app.route("/invert/<name>/<id>")
-def invert(name, id):
-    print "Inverting image:", name
-    invertName = "invert." + id + ".jpg"
-    im = numpy.array(Image.open(name).convert('L'));
+def invert(im):
     # Apparently, this can also be done by "255 - im".
     im = cv2.bitwise_not(im);
-    Image.fromarray(im).save(invertName);
-    return image(invertName)
+    return im
 
-@app.route("/histogram/<name>/<id>")
-def histogram(name, id):
-    img = numpy.array(Image.open(name))
+def histogram(img):
     fig = Figure()
     axes = fig.add_subplot(111)
     
@@ -123,34 +169,22 @@ def histogram(name, id):
     # axes.hist([img[...,0], img[...,1], img[...,2]], 300, color=['r','g','b'])
     axes.grid(True)
     setp(axes.get_yticklabels(), visible=False)
-    filename = "histogram." + id + ".jpg"
     canvas = FigureCanvas(fig)
-    canvas.print_figure(filename)
-    return image(filename)
+    canvas.print_jpg("run.hist.tmp.jpg")
+    return Image.open("run.hist.tmp.jpg")
 
-@app.route("/inrange/<name>/<id>/<int:rfrom>/<int:rto>")
-def inrange(name, id, rfrom, rto):
-    im = numpy.array(Image.open(name).convert('L'))
+def inrange(im, rfrom, rto):
     im = cv2.inRange(im, numpy.array([rfrom]), numpy.array([rto]))
-    thresholdName = "inrange." + id + ".jpg"
-    Image.fromarray(im).save(thresholdName)
-    return image(thresholdName)
+    return im
 
-@app.route("/threshold/<name>/<id>/<int:rfrom>/<int:rto>/<type>")
-def threshold(name, id, rfrom, rto, type):
-    im = numpy.array(Image.open(name).convert('L'))
+def threshold(im, rfrom, rto, type):
     (_, im) = cv2.threshold(im, rfrom, rto, cv2.THRESH_BINARY)
-    thresholdName = "threshold." + id + ".jpg"
-    Image.fromarray(im).save(thresholdName)
-    return image(thresholdName)
+    return im
 
-@app.route("/denoise/<name>/<id>")
-def denoise(name, id):
-    im = numpy.array(Image.open(name).convert('L'))
+def denoise(im):
     (im, _) = imtools.denoise(im, im)
-    denoiseName = "denoise." + id + ".jpg"
-    Image.fromarray(im).convert("RGB").save(denoiseName)
-    return image(denoiseName)
+    # May need to convert to RGB
+    return im
 
 if __name__ == "__main__":
     app.run()

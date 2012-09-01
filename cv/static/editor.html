@@ -1,0 +1,115 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+	<title></title>
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="codemirror.css"/>
+    <link rel="stylesheet" href="elegant.css"/>
+    <style>
+        .pipeline {
+            /*margin-left: auto;
+            margin-right: auto;
+            width: 700px;*/
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+        }
+
+        .error {
+            white-space: pre;
+        }
+
+        .pipeline-editor {
+            -webkit-box-ordinal-group: 1;
+            border: 1px solid black;
+            width: 500px;
+        }
+
+        .imagePanel {
+            -webkit-box-ordinal-group: 2;
+            border: 1px solid black;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+        }
+    </style>
+	<script src="modernizr-2.5.3.min.js"></script>
+</head>
+<body>
+<header>
+</header>
+<div class="pipeline" role="main">
+    <div class="pipeline-editor"></div>
+    <div class="imagePanel"></div>
+</div>
+<input class="run" type="button" value="Run"/>
+<footer>
+</footer>
+<script src="codemirror.js"></script>
+<script src="python.js"></script>
+<script src="jquery-1.7.2.min.js"></script>
+<script>
+    var editor = CodeMirror($(".pipeline-editor").get(0), {
+        value: "Testing!",
+        mode: "python",
+        theme: "elegant",
+        lineNumbers: true,
+        extraKeys: {
+            "Cmd-Enter": function() {
+            },
+            "Alt-Enter": function() {
+                $(".run").click();
+            }
+        }
+    });
+    $(".CodeMirror-scroll").css("height", "auto").css("overflow", "visible");
+    $.get("http://localhost:5000/get-script", function(result) {
+        editor.setValue(result);
+    });
+    $(".run").click(function() {
+        $(".run").attr("disabled", true);
+        $.getJSON("http://localhost:5000/run", {"script": editor.getValue()},
+        function(response) {
+            $(".imagePanel img").remove();
+            $(".imagePanel div").remove();
+            console.log(response);
+            images = response.images;
+            for (i = 0; i < images.length; i++) {
+                console.log(images[i]);
+                img = $("<img/>")
+                            .attr("src", "http://localhost:5000/image/" + 
+                                images[i] + "?" + 
+                                new Date().getTime()).attr("width", "200")
+                            .mouseover(function() {
+                    $(".popup").remove();            
+                    var src = $(this).attr("src");
+                    console.log("over: " + src);            
+                    var position = $(this).position();
+                    var height = $(this).height();
+                    lim = $("<img/>").attr("src", src).attr("width","500")
+                                     .addClass("popup")
+                                     .css("top", position.top)
+                                     .css("left", position.left)
+                                     .css("position", "absolute")
+                                     .mouseout(function() { 
+                                         $(".popup").remove() });
+                    $("body").append(lim);
+                });
+                $(".imagePanel").append(img);
+            }
+            $(".run").attr("disabled", false);
+        }).error(function(message) {
+            $(".run").attr("disabled", false);
+            $(".imagePanel img").remove();
+            $(".imagePanel div").remove();
+            $(".imagePanel").append($("<div/>")
+                .addClass("error").text(message.responseText));
+        });
+    });
+</script>
+</body>
+</html>
