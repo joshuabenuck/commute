@@ -2,6 +2,7 @@ import os
 from PIL import Image
 from pylab import *
 from numpy import *
+import numpy
 
 def get_imlist(path):
     """    Returns a list of filenames for 
