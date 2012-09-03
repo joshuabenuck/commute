@@ -25,16 +25,23 @@
         }
 
         .pipeline-editor {
-            -webkit-box-ordinal-group: 1;
             border: 1px solid black;
-            width: 500px;
         }
 
-        .imagePanel {
-            -webkit-box-ordinal-group: 2;
+        .outputPanel {
             border: 1px solid black;
             display: -webkit-box;
             -webkit-box-orient: vertical;
+            white-space: pre;
+        }
+
+        .imagePanel {
+            border: 1px solid black;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+        }
+
+        .imageRow {
         }
     </style>
 	<script src="modernizr-2.5.3.min.js"></script>
@@ -43,8 +50,9 @@
 <header>
 </header>
 <div class="pipeline" role="main">
-    <div class="pipeline-editor"></div>
     <div class="imagePanel"></div>
+    <div class="pipeline-editor"></div>
+    <div class="outputPanel"></div>
 </div>
 <input class="run" type="button" value="Run"/>
 <footer>
@@ -70,40 +78,50 @@
     $.get("http://localhost:5000/get-script", function(result) {
         editor.setValue(result);
     });
+    function getRow(images) {
+        row = $("<div/>").addClass("imageRow");
+        for (i = 0; i < images.length; i++) {
+            img = $("<img/>")
+                        .attr("src", "http://localhost:5000/image/" + 
+                            images[i] + "?" + 
+                            new Date().getTime()).attr("width", "200")
+                        .mouseover(function() {
+                $(".popup").remove();            
+                var src = $(this).attr("src");
+                var position = $(this).position();
+                var height = $(this).height();
+                lim = $("<img/>").attr("src", src).attr("width","500")
+                                 .addClass("popup")
+                                 .css("top", position.top)
+                                 .css("left", position.left)
+                                 .css("position", "absolute")
+                                 .mouseout(function() { 
+                                     $(".popup").remove() });
+                $("body").append(lim);
+            });
+            row.append(img);
+        }
+        return row;
+    }
     $(".run").click(function() {
         $(".run").attr("disabled", true);
         $.getJSON("http://localhost:5000/run", {"script": editor.getValue()},
         function(response) {
             $(".imagePanel img").remove();
-            $(".imagePanel div").remove();
-            console.log(response);
-            images = response.images;
-            for (i = 0; i < images.length; i++) {
-                console.log(images[i]);
-                img = $("<img/>")
-                            .attr("src", "http://localhost:5000/image/" + 
-                                images[i] + "?" + 
-                                new Date().getTime()).attr("width", "200")
-                            .mouseover(function() {
-                    $(".popup").remove();            
-                    var src = $(this).attr("src");
-                    console.log("over: " + src);            
-                    var position = $(this).position();
-                    var height = $(this).height();
-                    lim = $("<img/>").attr("src", src).attr("width","500")
-                                     .addClass("popup")
-                                     .css("top", position.top)
-                                     .css("left", position.left)
-                                     .css("position", "absolute")
-                                     .mouseout(function() { 
-                                         $(".popup").remove() });
-                    $("body").append(lim);
-                });
-                $(".imagePanel").append(img);
+            $(".imagePanel .imageRow").remove();
+            $(".outputPanel").text("");
+            output = response.stdout;
+            $(".outputPanel").text(output);
+            if (response.rows == undefined) {
+                response.rows = [response.images];
+            }
+            for (var i = 0; i < response.rows.length; i++) {
+                $(".imagePanel").append(getRow(response.rows[i]));
             }
             $(".run").attr("disabled", false);
         }).error(function(message) {
             $(".run").attr("disabled", false);
+            $(".outputPanel").text("");
             $(".imagePanel img").remove();
             $(".imagePanel div").remove();
             $(".imagePanel").append($("<div/>")

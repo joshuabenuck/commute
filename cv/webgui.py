@@ -5,11 +5,13 @@ from pylab import setp
 from matplotlib import pyplot
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib import cm
 from flask import Flask, url_for, send_file, jsonify, request, make_response
 from PIL import Image
 import imtools
 import traceback
 import ast
+from StringIO import StringIO
 
 """
 Next steps:
@@ -83,9 +85,11 @@ def any_response(data):
 
 @app.route("/run")
 def run():
+    stdout = StringIO()
     script = request.args["script"]
     with open("script.py", "w") as f:
         f.write(script)
+    #images = script[:1].split(",")
     scope = {
         "numpy":numpy,
         "Image":Image,
@@ -93,37 +97,46 @@ def run():
         "hue":hue,
         "inrange":inrange,
         "histogram":histogram,
-        "invert":invert
+        "invert":invert,
+        "stdout":stdout
     }
     imageVars = []
     imagesList = []
     arrayType = type(numpy.array(1))
     imageType = type(Image.open("LightBall.jpg"))
     def saveImage(img, filename):
-        print "Saving:", filename
+        #print "Saving:", filename
         img.save(filename)
         imagesList.append(filename)
     try:
         module = ast.parse(script)
         for stmt in module.body:
             if type(stmt) == ast.Assign:
+                if not hasattr(stmt.targets[0], "id"):
+                    continue
                 name = stmt.targets[0].id
                 if name in imageVars: imageVars.remove(name)
+                # Don't display images with _ as first char.
+                if name.find("_") == 0: continue
                 imageVars.append(name)
         exec script in scope
         for name in imageVars:
             contents = scope[name]
-            print name, type(contents)
+            #print name, type(contents)
             filename = "run." + name + ".jpg"
             if isinstance(contents, numpy.ndarray):
-                saveImage(Image.fromarray(contents), filename)
+                image = Image.fromarray(saveWithAxes(contents))
+                if len(contents.shape) == 2:
+                    image = image.convert("RGB")
+                saveImage(image, filename)
                 continue
             if hasattr(contents, "thumbnail"):
                 saveImage(contents, filename)
                 continue
     except Exception, e:
         return make_response((traceback.format_exc(e), 500, None))
-    return jsonify({"images":imagesList})
+    return jsonify({"images":imagesList,
+                    "stdout":stdout.getvalue()})
 
 @app.route("/get-script")
 def getScript():
@@ -135,12 +148,12 @@ def welcome():
 
 @app.route("/image/<name>")
 def image(name):
-    print "Returning image:", name
+    #print "Returning image:", name
     return send_file(name, mimetype="image/jpeg")
 
 @app.route("/grayscale/<name>/<id>")
 def grayscale(name, id):
-    print "Converting image to grayscale:", name
+    #print "Converting image to grayscale:", name
     grayscaleName = "grayscale." + id + ".jpg"
     Image.open(name).convert('L').save(grayscaleName)
     return image(grayscaleName)
@@ -153,6 +166,15 @@ def invert(im):
     # Apparently, this can also be done by "255 - im".
     im = cv2.bitwise_not(im);
     return im
+
+def saveWithAxes(img):
+    fig = Figure()
+    axes = fig.add_subplot(111)
+    axes.imshow(img, cmap=cm.Greys_r)
+    canvas = FigureCanvas(fig)
+    # TODO: Need to find a way to avoid this hack!
+    canvas.print_jpg("run.img.tmp.jpg")
+    return numpy.array(Image.open("run.img.tmp.jpg"))
 
 def histogram(img):
     fig = Figure()
