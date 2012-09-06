@@ -85,7 +85,7 @@
                         .attr("src", "http://localhost:5000/image/" + 
                             images[i] + "?" + 
                             new Date().getTime()).attr("width", "200")
-                        .mouseover(function() {
+                        .mouseup(function() {
                 $(".popup").remove();            
                 var src = $(this).attr("src");
                 var position = $(this).position();
@@ -107,8 +107,8 @@
         $(".run").attr("disabled", true);
         $.getJSON("http://localhost:5000/run", {"script": editor.getValue()},
         function(response) {
-            $(".imagePanel img").remove();
             $(".imagePanel .imageRow").remove();
+            $(".imagePanel div").remove();
             $(".outputPanel").text("");
             output = response.stdout;
             $(".outputPanel").text(output);

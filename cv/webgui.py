@@ -83,68 +83,77 @@ def any_response(data):
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
 
+def writeImages(index, imageVars, scope):
+    imagesList = []
+    for name in imageVars:
+        contents = scope[name]
+        #print name, type(contents)
+        filename = "run.%d.%s.jpg"%(index, name)
+        if isinstance(contents, numpy.ndarray):
+            image = Image.fromarray(saveWithAxes(contents))
+            if len(contents.shape) == 2:
+                image = image.convert("RGB")
+            image.save(filename)
+            imagesList.append(filename)
+            continue
+        if hasattr(contents, "thumbnail"):
+            contents.save(filename)
+            imagesList.append(filename)
+            continue
+    return imagesList
+
+def getImageVars(module):
+    imageVars = []
+    for stmt in module.body:
+        if type(stmt) == ast.Assign:
+            if not hasattr(stmt.targets[0], "id"):
+                continue
+            name = stmt.targets[0].id
+            if name in imageVars: imageVars.remove(name)
+            # Don't display images with _ as first char.
+            if name.find("_") == 0: continue
+            imageVars.append(name)
+    return imageVars
+
 @app.route("/run")
 def run():
     stdout = StringIO()
     script = request.args["script"]
     with open("script.py", "w") as f:
         f.write(script)
-    #images = script[:1].split(",")
+    images = script.split("\n")[0].split(",")
+    script = "\n".join(script.split("\n")[1:])
     scope = {
-        "numpy":numpy,
-        "Image":Image,
-        "cv2":cv2,
-        "hue":hue,
+        "numpy":numpy, "Image":Image, "cv2":cv2,
+        "hue":hue, "hsv":hsv, "histeq":histeq,
         "inrange":inrange,
         "histogram":histogram,
         "invert":invert,
         "stdout":stdout
     }
-    imageVars = []
-    imagesList = []
     arrayType = type(numpy.array(1))
     imageType = type(Image.open("LightBall.jpg"))
-    def saveImage(img, filename):
-        #print "Saving:", filename
-        img.save(filename)
-        imagesList.append(filename)
+    rows = []
     try:
         module = ast.parse(script)
-        for stmt in module.body:
-            if type(stmt) == ast.Assign:
-                if not hasattr(stmt.targets[0], "id"):
-                    continue
-                name = stmt.targets[0].id
-                if name in imageVars: imageVars.remove(name)
-                # Don't display images with _ as first char.
-                if name.find("_") == 0: continue
-                imageVars.append(name)
-        exec script in scope
-        for name in imageVars:
-            contents = scope[name]
-            #print name, type(contents)
-            filename = "run." + name + ".jpg"
-            if isinstance(contents, numpy.ndarray):
-                image = Image.fromarray(saveWithAxes(contents))
-                if len(contents.shape) == 2:
-                    image = image.convert("RGB")
-                saveImage(image, filename)
-                continue
-            if hasattr(contents, "thumbnail"):
-                saveImage(contents, filename)
-                continue
+        imageVars = getImageVars(module)
+        index = 0
+        for image in images:
+            # May need to clear out scope between runs...
+            fullScript = "im=Image.open(\"%s\")\n%s" %(
+                    image, script)
+            exec fullScript in scope
+            imagesList = writeImages(index, imageVars, scope)
+            rows.append(imagesList)
+            index = index + 1
     except Exception, e:
         return make_response((traceback.format_exc(e), 500, None))
-    return jsonify({"images":imagesList,
+    return jsonify({"rows":rows,
                     "stdout":stdout.getvalue()})
 
 @app.route("/get-script")
 def getScript():
     return send_file("script.py")
-
-@app.route("/")
-def welcome():
-    return "Hi!"
 
 @app.route("/image/<name>")
 def image(name):
@@ -158,9 +167,26 @@ def grayscale(name, id):
     Image.open(name).convert('L').save(grayscaleName)
     return image(grayscaleName)
 
+def hsv(img):
+    hsvimg = cv2.cvtColor(img, cv2.cv.CV_RGB2HSV)
+    return numpy.copy(hsvimg)
+
 def hue(img):
-    img = cv2.cvtColor(img, cv2.cv.CV_RGB2HSV)
-    return img[...,0]
+    hsvimg = hsv(img)
+    return numpy.copy(hsvimg[...,0])
+
+def histeq(im,nbr_bins=256):
+  """  Histogram equalization of a grayscale image. """
+  # get image histogram
+  imhist,bins = numpy.histogram(im.flatten(),
+          nbr_bins,normed=True)
+  cdf = imhist.cumsum() # cumulative distribution function
+  cdf = 255 * cdf / cdf[-1] # normalize
+
+  # use linear interpolation of cdf to find new pixel values
+  im2 = numpy.interp(im.flatten(),bins[:-1],cdf)
+
+  return im2.reshape(im.shape), cdf
 
 def invert(im):
     # Apparently, this can also be done by "255 - im".
