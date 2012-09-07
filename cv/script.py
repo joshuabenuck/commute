@@ -1,8 +1,13 @@
-Purple2.jpg,Purple3.jpg,LightBall.jpg,DarkBall.jpg,RedAndYellow.jpg,BlueAndPurple.jpg,FourBalls.jpg
+Orange1.jpg,Orange2.jpg,Orange3.jpg,Orange4.jpg,Orange5.jpg,Orange6.jpg,Orange7.jpg,Orange8.jpg,Orange9.jpg
+#Purple2.jpg,Purple3.jpg,LightBall.jpg,DarkBall.jpg,RedAndYellow.jpg,BlueAndPurple.jpg,FourBalls.jpg
 im.thumbnail((500, 500), Image.ANTIALIAS)
 ry = numpy.array(im)
 gray = numpy.array(Image.fromarray(ry).convert('L'))
-hist = histogram(gray)
+#hist = histogram(gray)
+_hsvimg = hsv(ry)
+#stdout.writelines(hsvimg.shape.__str__())
+#gray=cv2.inRange(_hsvimg, numpy.array([0, 50, 50], dtype="uint8"), numpy.array([8,255, 255], dtype="uint8"))
+
 #gray = hue(ry)
 #(gray, _) = histeq(gray)
 #sobelX = cv2.Sobel(gray,cv2.CV_8U, 1, 0, ksize=3, scale=0.4, delta=128)
@@ -25,9 +30,9 @@ hist = histogram(gray)
 #sobelThresholded = sobelThresholded
 
 # cv::Canny(image, contours, 125, 350);
-canny = cv2.Canny(gray, 200, 400)
+#canny = cv2.Canny(gray, 200, 400)
 
-gray = cv2.GaussianBlur(gray, (5, 5), 1.5)
+gray = cv2.GaussianBlur(gray, (9, 9), 1.5)
 #sobelThresholded = cv2.GaussianBlur(sobelThresholded, (5, 5), 1.5)
 #cv::HoughCircles(image, circles, CV_HOUGH_GRADIENT,
 #2, // accumulator resolution (size of the image / 2)
@@ -39,7 +44,7 @@ gray = cv2.GaussianBlur(gray, (5, 5), 1.5)
 #stdout.writelines(sobelThresholded.shape.__str__())
 #cv2.HoughCircles(image, method, dp, minDist[, circles[, param1[, param2[, minRadius[, maxRadius]]]]]) circles
 #_circles = cv2.HoughCircles(sobel, cv2.cv.CV_HOUGH_GRADIENT, 2, 50, param1=200, param2=100, minRadius=50, maxRadius=100)
-_circles2 = cv2.HoughCircles(gray, cv2.cv.CV_HOUGH_GRADIENT, 2, 50, param1=250, param2=100, minRadius=25, maxRadius=200)
+_circles2 = cv2.HoughCircles(gray, cv2.cv.CV_HOUGH_GRADIENT, 2, 50, param1=200, param2=100, minRadius=0, maxRadius=0)
 #if _circles != None:
 #  for circle in _circles[0]:
 #    cv2.circle(ry, (circle[0], circle[1]), circle[2], (255), 5)
